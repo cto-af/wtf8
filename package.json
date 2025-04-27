@@ -1,0 +1,46 @@
+{
+  "name": "@cto.af/wtf8",
+  "version": "0.0.0",
+  "decription": "",
+  "main": "lib/index.js",
+  "files": [
+    "lib/*"
+  ],
+  "type": "module",
+  "keywords": [],
+  "author": "Joe Hildebrand <joe-github@cursive.net>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cto-af/wtf8.git"
+  },
+  "homepage": "https://github.com/cto-af/wtf8#readme",
+  "bugs": {
+    "url": "https://github.com/cto-af/wtf8/issues"
+  },
+  "scripts": {
+    "clean": "rm -rf coverage docs lib",
+    "lint": "eslint .",
+    "pretest": "tsup --sourcemap inline",
+    "test": "c8 node --test",
+    "posttest": "tsup --silent",
+    "docs": "typedoc",
+    "ts": "tsup",
+    "build": "npm run test && npm run lint && npm run docs && npm pack --dry-run"
+  },
+  "devDependencies": {
+    "@cto.af/eslint-config": "5.1.14",
+    "c8": "10.1.3",
+    "eslint": "9.25.1",
+    "eslint-plugin-jsdoc": "50.6.11",
+    "eslint-plugin-markdown": "5.1.0",
+    "tsup": "8.4.0",
+    "typedoc": "0.28.3",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.31.0"
+  },
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=18.7"
+  }
+}
