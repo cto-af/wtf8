@@ -3,6 +3,7 @@ import {ByteStream} from './bytestream.js';
 const REPLACEMENT = 0xfffd; // U+FFFD: REPLACEMENT CHARACTER
 const BOM = 0xfeff; // U+FEFF: ZERO WIDTH NO-BREAK SPACE
 const ERR_TEXT = 'The encoded data was not valid for encoding wtf-8';
+const WTF8 = 'wtf-8';
 
 export class DecodeError extends TypeError {
   public code = 'ERR_ENCODING_INVALID_ENCODED_DATA';
@@ -26,7 +27,7 @@ function combine(...bytes: number[]): number {
  * Decoder for WTF-8.
  */
 export class Wtf8Decoder implements TextDecoderCommon {
-  public readonly encoding = 'wtf-8';
+  public readonly encoding = WTF8;
   public readonly fatal: boolean;
   public readonly ignoreBOM: boolean;
   #stream = new ByteStream();
@@ -195,5 +196,5 @@ export class Wtf8Decoder implements TextDecoderCommon {
  * Encoder for WTF-8.
  */
 export class Wtf8Encoder {
-
+  public readonly encoding = WTF8;
 }
