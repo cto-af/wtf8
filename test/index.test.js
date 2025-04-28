@@ -1,4 +1,4 @@
-import {DecodeError, Wtf8Decoder} from '../lib/index.js';
+import {DecodeError, Wtf8Decoder, Wtf8Encoder} from '../lib/index.js';
 import {Buffer} from 'node:buffer';
 import assert from 'node:assert';
 import test from 'node:test';
@@ -16,7 +16,7 @@ const good = [
   ['e0a080', '\u0800'],
   ['efbfbf', '\uffff'],
   ['f09f92a9', '\u{1F4A9}'],
-  ['efbbbff09f92a9efbbbf', '\u{1F4A9}\uFEFF'], // BOM-poop-BOM
+  ['efbbbff09f92a9efbbbf', '\u{1F4A9}\uFEFF', true], // BOM-poop-BOM
 ];
 
 const bad = [
@@ -46,6 +46,11 @@ const streams = [
   [['f09f92', 'a9'], '\u{1F4A9}'],
   [['c0', ''], '\ufffd'], // Truncated
 ];
+
+function fromHex(h) {
+  const buf = Buffer.from(h, 'hex');
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+}
 
 test('decoder', () => {
   assert.throws(() => new Wtf8Decoder('foo'), RangeError);
@@ -86,5 +91,19 @@ test('decoder streaming', () => {
       res += wtf.decode(chunk, {stream});
     }
     assert.equal(res, str);
+  }
+});
+
+test('encoder', () => {
+  const enc = new Wtf8Encoder();
+  const short = new Uint8Array(0);
+  for (const [hex, str, bom] of good) {
+    if (!bom) {
+      assert.deepEqual(enc.encode(str), fromHex(hex), hex);
+      assert.deepEqual(enc.encodeInto(str, short), {
+        read: 0,
+        written: 0,
+      }, hex);
+    }
   }
 });

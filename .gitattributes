@@ -15,3 +15,5 @@
 *.ico binary
 *.pdf binary
 docs/* binary
+tools/*.txt binary
+tools/wtf.txt filter=lfs diff=lfs merge=lfs -text

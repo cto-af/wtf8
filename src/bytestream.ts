@@ -58,6 +58,7 @@ export class ByteStream {
     }
     const ret = new Uint8Array(len);
     let [first] = this.#q;
+    // TODO: optimize for larger chunks
     for (let offset = 0; offset < len; offset++) {
       ret[offset] = first[this.#firstIndex++];
       if (this.#firstIndex === first.length) {
