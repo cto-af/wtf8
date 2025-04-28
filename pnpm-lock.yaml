@@ -23,6 +23,9 @@ importers:
       eslint-plugin-markdown:
         specifier: 5.1.0
         version: 5.1.0(eslint@9.25.1)
+      nodemark:
+        specifier: 0.3.0
+        version: 0.3.0
       tsup:
         specifier: 8.4.0
         version: 8.4.0(typescript@5.8.3)(yaml@2.7.1)
@@ -1009,6 +1012,9 @@ packages:
 
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
+
+  nodemark@0.3.0:
+    resolution: {integrity: sha512-ehT+NfV5liLY1sZVcosWiCViWHltQTnjsh/7GYkMkirzuyYw/K2VAbgwEIldAM1e9LJ3coGF6uBlTw1/EdZ1XA==}
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -2283,6 +2289,8 @@ snapshots:
       thenify-all: 1.6.0
 
   natural-compare@1.4.0: {}
+
+  nodemark@0.3.0: {}
 
   object-assign@4.1.1: {}
 

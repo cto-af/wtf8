@@ -9,6 +9,7 @@ export default defineConfig({
   ],
   format: 'esm',
   minify: true,
+  keepNames: true,
   outDir: 'lib',
   sourcemap: false,
   splitting: false,
