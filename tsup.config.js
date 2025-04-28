@@ -5,6 +5,7 @@ export default defineConfig({
   dts: true,
   entry: [
     'src/index.ts',
+    'src/bytestream.ts',
   ],
   format: 'esm',
   minify: true,
