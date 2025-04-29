@@ -143,7 +143,7 @@ export class Wtf8Decoder implements TextDecoderCommon {
             break;
           case 1:
             this.#cur = b & 0x1f;
-            if (this.#cur < 2) {
+            if ((this.#cur & 0x1e) === 0) {
               fatal();
             } else {
               this.#left = 1;
@@ -157,7 +157,7 @@ export class Wtf8Decoder implements TextDecoderCommon {
             break;
           case 3:
             if (b & 0x08) {
-              fatal(); // Over-long
+              fatal(); // 5+ bytes
             } else {
               this.#cur = b & 0x07;
               this.#left = 3;
