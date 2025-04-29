@@ -67,27 +67,47 @@ const REMAINDER = [
   3, // 0b1111
 ];
 
+export interface Wtf8DecodeOptions extends TextDecoderOptions {
+  /**
+   * The number of code units (16bits each) to reserve as workspace when the
+   * decoder is constructed.  Defaults to Wtf8Decoder.DEFAULT_BUFFERSIZE (4096),
+   * which was the smaller of the numbers that performed slightly better on
+   * my local machine.
+   */
+  bufferSize?: number;
+}
+
 /**
  * Decoder for WTF-8.
  */
 export class Wtf8Decoder implements TextDecoderCommon {
+  public static DEFAULT_BUFFERSIZE = 0x1000;
   public readonly encoding = WTF8;
   public readonly fatal: boolean;
   public readonly ignoreBOM: boolean;
+  public readonly bufferSize: number;
   #left = 0;
   #cur = 0;
   #pending = 0;
   #first = true;
+  #buf: Uint16Array;
 
   public constructor(
     label = 'wtf8',
-    options: TextDecoderOptions | undefined = undefined
+    options: Wtf8DecodeOptions | undefined = undefined
   ) {
     if (label.toLowerCase().replace('-', '') !== 'wtf8') {
       throw new InvalidEncodingError(label);
     }
     this.fatal = Boolean(options?.fatal);
     this.ignoreBOM = Boolean(options?.ignoreBOM);
+    this.bufferSize = Math.floor(
+      options?.bufferSize ?? Wtf8Decoder.DEFAULT_BUFFERSIZE
+    );
+    if (isNaN(this.bufferSize) || (this.bufferSize < 1)) {
+      throw new RangeError(`Invalid buffer size: ${options?.bufferSize}`);
+    }
+    this.#buf = new Uint16Array(this.bufferSize);
   }
 
   /**
@@ -113,10 +133,10 @@ export class Wtf8Decoder implements TextDecoderCommon {
     const bytes = getUint8(input);
 
     const res: string[] = [];
-    const out = new Uint16Array(Math.min(
-      0xffff,
-      bytes.length + this.#pending + 1
-    ));
+    const out = this.#buf;
+    // Might need up to 3 more code units if there was a pending read left
+    // over.  Might need only one more if this char is supplemental.
+    const maxSize = this.bufferSize - 3;
     let pos = 0;
     const fatal = (): void => {
       this.#cur = 0;
@@ -210,7 +230,7 @@ export class Wtf8Decoder implements TextDecoderCommon {
     };
 
     for (const b of bytes) {
-      if (pos >= out.length - 1) {
+      if (pos >= maxSize) {
         res.push(String.fromCharCode.apply(
           null,
           out.subarray(0, pos) as unknown as number[]

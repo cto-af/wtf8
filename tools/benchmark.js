@@ -7,9 +7,10 @@ const buf = fs.readFileSync(new URL('./wtf.txt', import.meta.url));
 
 const uAll = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
 
+const dec = new Wtf8Decoder();
+const enc = new Wtf8Encoder();
+
 const result = nodemark(() => {
-  const dec = new Wtf8Decoder();
-  const enc = new Wtf8Encoder();
   const str = dec.decode(uAll);
   enc.encode(str);
 }, undefined, 10000);

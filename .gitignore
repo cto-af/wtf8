@@ -3,3 +3,4 @@ coverage/
 docs/
 lib/
 node_modules/
+t.js
