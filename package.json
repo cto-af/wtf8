@@ -1,6 +1,6 @@
 {
   "name": "@cto.af/wtf8",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "decription": "Encode and decode WTF8 like TextEncoder and TextDecoder",
   "main": "lib/index.js",
   "files": [
