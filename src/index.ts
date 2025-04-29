@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/class-methods-use-this */
 
-// U+FFFD: REPLACEMENT CHARACTER
-const REPLACEMENT = String.fromCharCode(0xfffd);
+const REPLACEMENT = 0xfffd; // U+FFFD: REPLACEMENT CHARACTER
 const BOM = 0xfeff; // U+FEFF: ZERO WIDTH NO-BREAK SPACE
 const ERR_TEXT = 'The encoded data was not valid for encoding wtf-8';
 const WTF8 = 'wtf-8';
@@ -109,7 +108,9 @@ export class Wtf8Decoder implements TextDecoderCommon {
     const streaming = Boolean(options?.stream);
     const bytes = getUint8(input);
 
-    let res = '';
+    const res: string[] = [];
+    const out = new Uint16Array(Math.min(0xffff, bytes.length + 1));
+    let pos = 0;
     const fatal = (): void => {
       this.#cur = 0;
       this.#left = 0;
@@ -117,7 +118,7 @@ export class Wtf8Decoder implements TextDecoderCommon {
       if (this.fatal) {
         throw new DecodeError();
       }
-      res += REPLACEMENT;
+      out[pos++] = REPLACEMENT;
     };
 
     const fatals = (): void => {
@@ -135,10 +136,10 @@ export class Wtf8Decoder implements TextDecoderCommon {
         const n = REMAINDER[b >> 4];
         switch (n) {
           case -1:
-            fatal();
+            fatal(); // Continuation byte where start was expected
             break;
           case 0:
-            res += String.fromCharCode(b);
+            out[pos++] = b;
             break;
           case 1:
             this.#cur = b & 0x1f;
@@ -156,7 +157,7 @@ export class Wtf8Decoder implements TextDecoderCommon {
             break;
           case 3:
             if (b & 0x08) {
-              fatal();
+              fatal(); // Over-long
             } else {
               this.#cur = b & 0x07;
               this.#left = 3;
@@ -185,8 +186,14 @@ export class Wtf8Decoder implements TextDecoderCommon {
         this.#cur = (this.#cur << 6) | (b & 0x3f);
         this.#pending++;
         if (--this.#left === 0) {
-          if (!this.#first || this.ignoreBOM || (this.#cur !== BOM)) {
-            res += String.fromCodePoint(this.#cur);
+          if (this.ignoreBOM || !this.#first || (this.#cur !== BOM)) {
+            if (this.#cur < 0x10000) {
+              out[pos++] = this.#cur;
+            } else {
+              const cp = this.#cur - 0x10000;
+              out[pos++] = ((cp >>> 10) & 0x3ff) | 0xd800;
+              out[pos++] = (cp & 0x3ff) | 0xdc00;
+            }
           }
           this.#cur = 0;
           this.#pending = 0;
@@ -196,15 +203,30 @@ export class Wtf8Decoder implements TextDecoderCommon {
     };
 
     for (const b of bytes) {
+      if (pos >= out.length - 1) {
+        res.push(String.fromCharCode.apply(
+          null,
+          out.subarray(0, pos) as unknown as number[]
+        ));
+        pos = 0;
+      }
       oneByte(b);
     }
+
     if (!streaming) {
       this.#first = true;
       if (this.#cur || this.#left) {
         fatals();
       }
     }
-    return res;
+
+    if (pos > 0) {
+      res.push(String.fromCharCode.apply(
+        null,
+        out.subarray(0, pos) as unknown as number[]
+      ));
+    }
+    return res.join('');
   }
 }
 

@@ -14,6 +14,8 @@ const good = [
   ['c280', '\x80'],
   ['dfbf', '\u07ff'],
   ['e0a080', '\u0800'],
+  ['eda080', '\ud800'],
+  ['edb080', '\udc00'],
   ['efbfbf', '\uffff'],
   ['f09f92a9', '\u{1F4A9}'],
   ['efbbbff09f92a9efbbbf', '\u{1F4A9}\uFEFF', true], // BOM-poop-BOM
@@ -114,5 +116,20 @@ test('encoder', () => {
         written: 0,
       }, hex);
     }
+  }
+});
+
+test('all chars', () => {
+  const enc = new Wtf8Encoder();
+  const dec = new Wtf8Decoder(undefined, {ignoreBOM: true, fatal: true});
+  const te = new TextEncoder();
+  for (let i = 0; i <= 0x10ffff; i++) {
+    const s = String.fromCodePoint(i);
+    const b = enc.encode(s);
+    if (i < 0xd800 || i > 0xdfff) {
+      assert.deepEqual(b, te.encode(s));
+    }
+    const d = dec.decode(b);
+    assert.equal(d, s);
   }
 });
