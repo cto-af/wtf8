@@ -28,6 +28,8 @@ const bytes = new Wtf8Encoder().encode('\ud800');
 const string = new Wtf8Decoder().decode(bytes); // '\ud800'
 ```
 
+W3C streams are also provided: `Wtf8EncoderStream` and `Wtf8DecoderStream`.
+
 ## Notes
 
 Used a few of the tricks from the paper
