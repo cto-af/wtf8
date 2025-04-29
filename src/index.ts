@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/class-methods-use-this */
-import {ByteStream} from './bytestream.js';
 
-const REPLACEMENT = 0xfffd; // U+FFFD: REPLACEMENT CHARACTER
+// U+FFFD: REPLACEMENT CHARACTER
+const REPLACEMENT = String.fromCharCode(0xfffd);
 const BOM = 0xfeff; // U+FEFF: ZERO WIDTH NO-BREAK SPACE
 const ERR_TEXT = 'The encoded data was not valid for encoding wtf-8';
 const WTF8 = 'wtf-8';
@@ -21,9 +21,48 @@ export class InvalidEncodingError extends RangeError {
   }
 }
 
-function combine(...bytes: number[]): number {
-  return bytes.reduce((tot, b) => (tot << 6) | b, 0);
+function isArrayBufferView(
+  input: AllowSharedBufferSource
+): input is ArrayBufferView {
+  return (
+    input &&
+    !(input instanceof ArrayBuffer) &&
+    input.buffer instanceof ArrayBuffer
+  );
 }
+
+function getUint8(input?: AllowSharedBufferSource): Uint8Array {
+  if (!input) {
+    return EMPTY;
+  }
+  if (input instanceof Uint8Array) {
+    return input;
+  }
+  // Uint16Array, for instance
+  if (isArrayBufferView(input)) {
+    return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+  }
+  return new Uint8Array(input);
+}
+
+const REMAINDER = [
+  0, // 0b0000
+  0, // 0b0001
+  0, // 0b0010
+  0, // 0b0011
+  0, // 0b0100
+  0, // 0b0101
+  0, // 0b0110
+  0, // 0b0111
+  -1, // 0b1000
+  -1, // 0b1001
+  -1, // 0b1010
+  -1, // 0b1011
+  1, // 0b1100
+  1, // 0b1101
+  2, // 0b1110
+  3, // 0b1111
+];
 
 /**
  * Decoder for WTF-8.
@@ -32,7 +71,9 @@ export class Wtf8Decoder implements TextDecoderCommon {
   public readonly encoding = WTF8;
   public readonly fatal: boolean;
   public readonly ignoreBOM: boolean;
-  #stream = new ByteStream();
+  #left = 0;
+  #cur = 0;
+  #pending = 0;
   #first = true;
 
   public constructor(
@@ -66,131 +107,104 @@ export class Wtf8Decoder implements TextDecoderCommon {
     options?: TextDecodeOptions
   ): string {
     const streaming = Boolean(options?.stream);
-    this.#stream.push(input);
-    const res: string[] = [];
-    // UTF-16 is always <= length to UTF8.  Don't alloc too much, for large
-    // inputs, we'll work in chunks.
-    const out = new Uint16Array(Math.min(0xffff, this.#stream.length + 1));
-    let outOffset = 0;
+    const bytes = getUint8(input);
 
-    const checkContinue = (...continuingBytes: number[]): boolean => {
-      for (const b of continuingBytes) {
-        if ((b & 0xc0) !== 0x80) {
-          this.#fatal();
-          out[outOffset++] = REPLACEMENT;
-          return false;
-        }
+    let res = '';
+    const fatal = (): void => {
+      this.#cur = 0;
+      this.#left = 0;
+      this.#pending = 0;
+      if (this.fatal) {
+        throw new DecodeError();
       }
-      return true;
+      res += REPLACEMENT;
     };
 
-    while (true) {
-      // We need two spots left in buf in case we're at a supplemental char
-      if (this.#stream.empty || (outOffset >= (out.length - 1))) {
-        res.push(String.fromCharCode.apply(
-          null,
-          out.subarray(0, outOffset) as unknown as number[]
-        ));
-        if (this.#stream.empty) {
-          break;
-        }
-        outOffset = 0;
+    const fatals = (): void => {
+      const p = this.#pending;
+      for (let i = 0; i < p; i++) {
+        fatal();
       }
+    };
 
-      // Leave b1 in place in case we are streaming, doing have the follow-up
-      // bytes, and we'll pick back up later.
-      const b1 = this.#stream.peek() as number; // Not empty, from above.
-      if ((b1 & 0x80) === 0) {
-        out[outOffset++] = b1;
-        this.#stream.shift();
-      } else if ((b1 & 0xe0) === 0xc0) {
-        // 2 bytes
-        if (this.#stream.hasBytes(2)) {
-          const [_b1, b2] = this.#stream.shift(2);
-          if (checkContinue(b2)) {
-            const cp = combine(b1 & 0x1f, b2 & 0x3f);
-            if (cp < 0x80) {
-              this.#fatal();
-              out[outOffset++] = REPLACEMENT;
-              this.#stream.unshift(b2);
+    // eslint-disable-next-line @typescript-eslint/consistent-return
+    const oneByte = (b: number): void => {
+      if (this.#left === 0) {
+        //
+        // assert.equal(this.#cur, 0);
+        const n = REMAINDER[b >> 4];
+        switch (n) {
+          case -1:
+            fatal();
+            break;
+          case 0:
+            res += String.fromCharCode(b);
+            break;
+          case 1:
+            this.#cur = b & 0x1f;
+            if (this.#cur < 2) {
+              fatal();
             } else {
-              out[outOffset++] = cp;
+              this.#left = 1;
+              this.#pending = 1;
             }
-          } else {
-            // Try again with b2 as the start of a sequence.
-            this.#stream.unshift(b2);
-          }
-        } else if (streaming) {
-          break;
-        } else {
-          this.#fatal();
-          out[outOffset++] = REPLACEMENT;
-          this.#stream.shift();
-        }
-      } else if ((b1 & 0xf0) === 0xe0) {
-        // 3 bytes
-        if (this.#stream.hasBytes(3)) {
-          const [_b1, b2, b3] = this.#stream.shift(3);
-          if (checkContinue(b2, b3)) {
-            const cp = combine(b1 & 0x0f, b2 & 0x3f, b3 & 0x3f);
-            if (cp < 0x800) {
-              this.#fatal();
-              out[outOffset++] = REPLACEMENT;
-              this.#stream.unshift(b2, b3);
-            } else if (!this.#first || this.ignoreBOM || (cp !== BOM)) {
-              out[outOffset++] = cp;
-            }
-          } else {
-            this.#stream.unshift(b2, b3);
-          }
-        } else if (streaming) {
-          break;
-        } else {
-          this.#fatal();
-          out[outOffset++] = REPLACEMENT;
-          this.#stream.shift();
-        }
-      } else if ((b1 & 0xf8) === 0xf0) {
-        // 4 bytes.  Always two code units.
-        if (this.#stream.hasBytes(4)) {
-          const [_b1, b2, b3, b4] = this.#stream.shift(4);
-          if (checkContinue(b2, b3, b4)) {
-            let cp = combine(b1 & 0x0f, b2 & 0x3f, b3 & 0x3f, b4 & 0x3f);
-            if (cp < 0x10000) {
-              this.#fatal();
-              out[outOffset++] = REPLACEMENT;
-              this.#stream.unshift(b2, b3, b4);
+            break;
+          case 2:
+            this.#cur = b & 0x0f;
+            this.#left = 2;
+            this.#pending = 1;
+            break;
+          case 3:
+            if (b & 0x08) {
+              fatal();
             } else {
-              cp -= 0x10000;
-              out[outOffset++] = ((cp >>> 10) & 0x3ff) | 0xd800;
-              out[outOffset++] = (cp & 0x3ff) | 0xdc00;
+              this.#cur = b & 0x07;
+              this.#left = 3;
+              this.#pending = 1;
             }
-          } else {
-            this.#stream.unshift(b2, b3, b4);
-          }
-        } else if (streaming) {
-          break;
-        } else {
-          this.#fatal();
-          out[outOffset++] = REPLACEMENT;
-          this.#stream.shift();
+            break;
         }
       } else {
-        this.#fatal();
-        out[outOffset++] = REPLACEMENT;
-        this.#stream.shift();
+        if ((b & 0xc0) !== 0x80) {
+          fatals();
+          return oneByte(b);
+        }
+        if (
+          (this.#pending === 1) && // Second byte of 3, not 3rd of 4.
+          (this.#left === 2) &&
+          (this.#cur === 0) &&
+          ((b & 0x20) === 0)
+        ) {
+          fatals();
+          return oneByte(b);
+        }
+        if ((this.#left === 3) && (this.#cur === 0) && ((b & 0x30) === 0)) {
+          fatals();
+          return oneByte(b);
+        }
+        this.#cur = (this.#cur << 6) | (b & 0x3f);
+        this.#pending++;
+        if (--this.#left === 0) {
+          if (!this.#first || this.ignoreBOM || (this.#cur !== BOM)) {
+            res += String.fromCodePoint(this.#cur);
+          }
+          this.#cur = 0;
+          this.#pending = 0;
+          this.#first = false;
+        }
       }
-      this.#first = false;
-    }
+    };
 
-    this.#first = !streaming;
-    return res.join('');
-  }
-
-  #fatal(): void {
-    if (this.fatal) {
-      throw new DecodeError();
+    for (const b of bytes) {
+      oneByte(b);
     }
+    if (!streaming) {
+      this.#first = true;
+      if (this.#cur || this.#left) {
+        fatals();
+      }
+    }
+    return res;
   }
 }
 

@@ -21,11 +21,11 @@
   "scripts": {
     "clean": "rm -rf coverage docs lib",
     "lint": "eslint .",
-    "pretest": "tsup --sourcemap inline",
+    "pretest": "tsc --inlineSourceMap",
     "test": "c8 node --test",
-    "posttest": "tsup --silent",
+    "posttest": "tsc",
     "docs": "typedoc",
-    "ts": "tsup",
+    "ts": "tsc",
     "build": "npm run test && npm run lint && npm run docs && npm pack --dry-run"
   },
   "devDependencies": {
@@ -35,10 +35,9 @@
     "eslint-plugin-jsdoc": "50.6.11",
     "eslint-plugin-markdown": "5.1.0",
     "nodemark": "0.3.0",
-    "tsup": "8.4.0",
     "typedoc": "0.28.3",
     "typescript": "5.8.3",
-    "typescript-eslint": "8.31.0"
+    "typescript-eslint": "8.31.1"
   },
   "packageManager": "pnpm@10.10.0",
   "engines": {

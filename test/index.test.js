@@ -29,6 +29,10 @@ const bad = [
   ['f0808081', '\ufffd\ufffd\ufffd\ufffd'], // < 0x10000
   ['f08080', '\ufffd\ufffd\ufffd'], // Truncated
   ['f0000000', '\ufffd\x00\x00\x00'], // Not continuing
+  ['ff', '\ufffd'], // All the bytes
+  ['f880', '\ufffd\ufffd'],
+  ['fc80', '\ufffd\ufffd'],
+  ['fe80', '\ufffd\ufffd'],
 ];
 
 const BOM = [
@@ -64,6 +68,11 @@ test('decoder', () => {
   for (const [hex, str] of good) {
     assert.equal(wtf.decode(Buffer.from(hex, 'hex')), str, hex);
   }
+
+  // Avoid endian problems
+  assert.equal(wtf.decode(new Uint16Array([0])), '\x00\x00');
+  assert.equal(wtf.decode(), '');
+  assert.equal(wtf.decode(new ArrayBuffer(0)), '');
 
   const wtff = new Wtf8Decoder('wtf8', {fatal: true});
   for (const [hex, str] of bad) {
