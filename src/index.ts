@@ -6,6 +6,11 @@ const ERR_TEXT = 'The encoded data was not valid for encoding wtf-8';
 const WTF8 = 'wtf-8';
 const EMPTY = new Uint8Array(0);
 
+/**
+ * Error decoding WTF-8.
+ * Made to look more compatible with the errors that Node's TextDecoder
+ * throws by having a code field.
+ */
 export class DecodeError extends TypeError {
   public code = 'ERR_ENCODING_INVALID_ENCODED_DATA';
   public constructor() {
@@ -13,6 +18,11 @@ export class DecodeError extends TypeError {
   }
 }
 
+/**
+ * Passed in an encoding other than "wtf-8" or something close to that.
+ * Made to look more compatible with the errors that Node's TextDecoder
+ * throws by having a code field.
+ */
 export class InvalidEncodingError extends RangeError {
   public code = 'ERR_ENCODING_NOT_SUPPORTED';
   public constructor(label: string) {
@@ -20,6 +30,12 @@ export class InvalidEncodingError extends RangeError {
   }
 }
 
+/**
+ * Type assertion for typed arrays.
+ *
+ * @param input Potential typed array.
+ * @returns True if a typed array.
+ */
 function isArrayBufferView(
   input: AllowSharedBufferSource
 ): input is ArrayBufferView {
@@ -30,6 +46,12 @@ function isArrayBufferView(
   );
 }
 
+/**
+ * Convert unknown input to Uint8Array.
+ *
+ * @param input Typed Array, ArrayBuffer, or Buffer.
+ * @returns Uint8Array.
+ */
 function getUint8(input?: AllowSharedBufferSource): Uint8Array {
   if (!input) {
     return EMPTY;
@@ -44,6 +66,10 @@ function getUint8(input?: AllowSharedBufferSource): Uint8Array {
   return new Uint8Array(input);
 }
 
+/**
+ * How many bytes are left over after consuming this start byte?
+ * -1 for error.
+ */
 const REMAINDER = [
   0, // 0b0000
   0, // 0b0001
@@ -144,7 +170,7 @@ export class Wtf8Decoder implements TextDecoderCommon {
           case 1:
             this.#cur = b & 0x1f;
             if ((this.#cur & 0x1e) === 0) {
-              fatal();
+              fatal(); // Over-long encoding of 2 bytes
             } else {
               this.#left = 1;
               this.#pending = 1;
@@ -167,8 +193,8 @@ export class Wtf8Decoder implements TextDecoderCommon {
         }
       } else {
         if ((b & 0xc0) !== 0x80) {
-          fatals();
-          return oneByte(b);
+          fatals(); // Not continuation, cancel pending
+          return oneByte(b); // Try again
         }
         if (
           (this.#pending === 1) && // Second byte of 3, not 3rd of 4.
@@ -176,11 +202,11 @@ export class Wtf8Decoder implements TextDecoderCommon {
           (this.#cur === 0) &&
           ((b & 0x20) === 0)
         ) {
-          fatals();
+          fatals(); // Over-long encoding as 3 bytes.
           return oneByte(b);
         }
         if ((this.#left === 3) && (this.#cur === 0) && ((b & 0x30) === 0)) {
-          fatals();
+          fatals(); // Over-long encoding as 4 bytes.
           return oneByte(b);
         }
         this.#cur = (this.#cur << 6) | (b & 0x3f);
@@ -230,6 +256,11 @@ export class Wtf8Decoder implements TextDecoderCommon {
   }
 }
 
+/**
+ * How many bytes with this string take up in UTF-8 encoding?
+ * @param str String to measure.
+ * @returns Expected byte count.
+ */
 function utf8length(str: string): number {
   let len = 0;
   for (const s of str) {
