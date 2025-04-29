@@ -84,6 +84,25 @@ test('decoder', () => {
   }
 });
 
+test('decoder bufferSize', () => {
+  assert.throws(() => new Wtf8Decoder(undefined, {bufferSize: 'cow'}));
+  assert.throws(() => new Wtf8Decoder(undefined, {bufferSize: '0.5'}));
+  assert.throws(() => new Wtf8Decoder(undefined, {bufferSize: -1}));
+
+  const wtf1 = new Wtf8Decoder('WTF-8', {buffer: 1});
+  const wtf2 = new Wtf8Decoder('WTF-8', {buffer: 1});
+  for (const [hex, str] of good) {
+    assert.equal(wtf1.decode(Buffer.from(hex, 'hex')), str, hex);
+    assert.equal(wtf2.decode(Buffer.from(hex, 'hex')), str, hex);
+  }
+
+  for (const [hex, str] of bad) {
+    const buf = Buffer.from(hex, 'hex');
+    assert.equal(wtf1.decode(buf), str, hex);
+    assert.equal(wtf2.decode(buf), str, hex);
+  }
+});
+
 test('decoder BOM', () => {
   const wtf = new Wtf8Decoder('wtf8', {ignoreBOM: true});
   for (const [hex, str] of BOM) {
