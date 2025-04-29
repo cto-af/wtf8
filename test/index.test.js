@@ -127,9 +127,9 @@ test('all chars', () => {
     const s = String.fromCodePoint(i);
     const b = enc.encode(s);
     if (i < 0xd800 || i > 0xdfff) {
-      assert.deepEqual(b, te.encode(s));
+      assert.deepEqual(b, te.encode(s), i);
     }
     const d = dec.decode(b);
-    assert.equal(d, s);
+    assert.equal(d, s, i);
   }
 });
