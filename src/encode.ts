@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/class-methods-use-this */
 import {EMPTY, WTF8} from './const.js';
 
 /**

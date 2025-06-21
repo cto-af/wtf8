@@ -19,4 +19,13 @@ export default [
   ...json,
   ...jts,
   ...markdown,
+  {
+    files: [
+      '**/*.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-unnecessary-type-conversion': 'off',
+      '@typescript-eslint/class-methods-use-this': 'off',
+    },
+  },
 ];
