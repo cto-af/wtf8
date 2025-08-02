@@ -22,7 +22,7 @@ async function streamChunks(chunks, expected) {
   assert.equal(res, expected);
 }
 
-test('Web streams', async() => {
+test('Web streams', async () => {
   await streamChunks(['f0', '9f92a9'], '\u{1F4A9}');
   await streamChunks(['f0', '9f92'], '\ufffd\ufffd\ufffd');
 

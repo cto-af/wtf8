@@ -22,7 +22,7 @@ async function streamChunks(chunks, expected) {
   assert.equal(Buffer.concat(res).toString('hex'), expected);
 }
 
-test('Web streams', async() => {
+test('Web streams', async () => {
   await streamChunks(['\u{1F4A9}'], 'f09f92a9');
   await streamChunks(['\ud83d', '\udca9', '\ud800'], 'f09f92a9eda080');
 
