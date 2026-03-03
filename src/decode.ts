@@ -19,7 +19,9 @@ function isArrayBufferView(
 ): input is ArrayBufferView {
   return (
     input &&
+    (typeof input === 'object') &&
     !(input instanceof ArrayBuffer) &&
+    !(input instanceof SharedArrayBuffer) &&
     input.buffer instanceof ArrayBuffer
   );
 }
