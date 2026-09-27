@@ -1,6 +1,6 @@
 import {Buffer} from 'node:buffer';
 import {Wtf8EncoderStream} from '../lib/encodeStream.js';
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import test from 'node:test';
 
 async function streamChunks(chunks, expected) {
