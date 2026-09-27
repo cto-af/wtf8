@@ -1,6 +1,6 @@
 import {DecodeError, Wtf8Decoder, Wtf8Encoder} from '../lib/index.js';
 import {Buffer} from 'node:buffer';
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import test from 'node:test';
 
 const BIG = 65536 * 2;
