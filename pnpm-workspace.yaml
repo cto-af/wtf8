@@ -1,4 +1,3 @@
-minimumReleaseAgeExclude:
-  - '@cto.af/eslint-config@7.0.3'
-onlyBuiltDependencies:
-  - esbuild
+auditConfig:
+  ignoreGhsas:
+    - GHSA-238p-pmpm-9mq7
