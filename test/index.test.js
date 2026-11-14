@@ -35,6 +35,9 @@ const bad = [
   ['f880', '\ufffd\ufffd'],
   ['fc80', '\ufffd\ufffd'],
   ['fe80', '\ufffd\ufffd'],
+  ['f4908080', '\ufffd'], // > 0x10ffff
+  ['f5808080', '\ufffd'], // > 0x10ffff
+  ['f7bfbfbf', '\ufffd'], // > 0x10ffff
 ];
 
 const BOM = [
