@@ -53,18 +53,19 @@
     "build": "npm run test && npm run lint && npm run docs && npm pack --dry-run"
   },
   "devDependencies": {
-    "@cto.af/eslint-config": "^7.0.3",
+    "@cto.af/eslint-config": "^7.0.4",
+    "@cto.af/ncurc": "^0.0.3",
     "@eslint/markdown": "^8.0.3",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "eslint-plugin-jsdoc": "^65.3.12",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-jsdoc": "^65.4.5",
     "nodemark": "^0.3.0",
     "superc8": "^12.7.0",
     "typedoc": "^0.28.20",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-eslint": "^8.71.2"
+    "typescript-eslint": "^8.72.1"
   },
-  "packageManager": "pnpm@12.14.0",
+  "packageManager": "pnpm@12.18.0",
   "engines": {
     "node": ">=22"
   }
