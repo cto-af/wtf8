@@ -218,6 +218,8 @@ export class Wtf8Decoder implements TextDecoderCommon {
           if (this.ignoreBOM || !this.#first || (this.#cur !== BOM)) {
             if (this.#cur < 0x10000) {
               out[pos++] = this.#cur;
+            } else if (this.#cur > 0x10ffff) {
+              fatal();
             } else {
               const cp = this.#cur - 0x10000;
               out[pos++] = ((cp >>> 10) & 0x3ff) | MIN_HIGH_SURROGATE;
